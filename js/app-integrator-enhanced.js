@@ -58,7 +58,7 @@ class NeuralAppIntegrator {
     async initialize() {
         console.log("Initializing Enhanced Neural MR Bot Application...");
 
-        try {
+       // try {
             // *** START: নতুন লাইন যোগ করুন ***
             // TensorFlow.js-কে WebGL ব্যবহার না করে শুধুমাত্র CPU ব্যবহার করতে বাধ্য করা হচ্ছে
             // এটি Shader Compilation Error ঠিক করবে।
@@ -91,11 +91,11 @@ class NeuralAppIntegrator {
             this.addBotMessage(this.getWelcomeMessage());
 
             return true;
-        } catch (error) {
+       /* } catch (error) {
             console.error("Error initializing application:", error);
             this.addBotMessage("Error initializing the application. Please refresh the page and try again.");
             return false;
-        }
+        }*/
     }
     /*
     async initialize() {
