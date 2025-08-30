@@ -1,0 +1,28 @@
+{
+  "name": "neural-mr-bot",
+  "version": "1.0.0",
+  "description": "A self-learning AI language teaching assistant that learns from conversations and text inputs",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "serve .",
+    "test": "echo &quot;Error: no test specified&quot; && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "language-learning",
+    "neural-network",
+    "tensorflow",
+    "self-learning",
+    "chatbot",
+    "education"
+  ],
+  "author": "NinjaTech AI",
+  "license": "MIT",
+  "dependencies": {
+    "@tensorflow/tfjs": "^3.18.0"
+  },
+  "devDependencies": {
+    "serve": "^14.0.1"
+  }
+}

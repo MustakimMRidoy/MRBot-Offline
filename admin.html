@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural MR Bot Admin - Model Management</title>
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#6D28D9',
+                        accent: '#8B5CF6',
+                        correct: '#10B981',
+                        incorrect: '#EF4444',
+                        neutral: '#6B7280'
+                    }
+                }
+            }
+        }
+    </script>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="bg-white rounded-lg shadow-md p-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center">
+                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-xl font-bold mr-3">
+                    MR
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Neural MR Bot Admin</h1>
+                    <p class="text-sm text-gray-600">Model Management & Training Data</p>
+                </div>
+            </div>
+            
+            <div>
+                <a href="index.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded transition-colors">
+                    Back to Chat
+                </a>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Model Management -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Model Management</h2>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-bold mb-2 text-primary">Model Status</h3>
+                        <div id="model-status" class="p-3 bg-gray-100 rounded text-sm">
+                            Loading...
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-bold mb-2 text-primary">Training Metrics</h3>
+                        <div id="training-metrics" class="p-3 bg-gray-100 rounded text-sm">
+                            Loading...
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <button id="export-model" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded">
+                            Export Model
+                        </button>
+                        
+                        <div class="relative">
+                            <input type="file" id="import-model-file" class="hidden" accept=".json">
+                            <button id="import-model" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                                Import Model
+                            </button>
+                        </div>
+                        
+                        <button id="reset-model" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+                            Reset Model
+                        </button>
+                        
+                        <button id="run-tests" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded">
+                            Run Tests
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Manual Training</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Input Text</label>
+                        <textarea id="train-input" rows="3" class="w-full border rounded p-2"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Expected Response</label>
+                        <textarea id="train-response" rows="3" class="w-full border rounded p-2"></textarea>
+                    </div>
+                    
+                    <button id="add-training-pair" class="w-full bg-primary hover:bg-secondary text-white py-2 px-4 rounded">
+                        Add Training Pair
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Column: Training Data & Console -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Training Data</h2>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-bold text-primary">Conversation Pairs</h3>
+                            <span id="conversation-count" class="text-sm bg-gray-200 px-2 py-1 rounded">0 pairs</span>
+                        </div>
+                        
+                        <div id="conversation-data" class="max-h-60 overflow-y-auto border rounded p-2 text-sm">
+                            Loading...
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-bold text-primary">Text Data</h3>
+                            <span id="text-count" class="text-sm bg-gray-200 px-2 py-1 rounded">0 texts</span>
+                        </div>
+                        
+                        <div id="text-data" class="max-h-60 overflow-y-auto border rounded p-2 text-sm">
+                            Loading...
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-bold text-primary">Feedback Data</h3>
+                            <span id="feedback-count" class="text-sm bg-gray-200 px-2 py-1 rounded">0 items</span>
+                        </div>
+                        
+                        <div id="feedback-data" class="max-h-60 overflow-y-auto border rounded p-2 text-sm">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <div class="flex justify-between mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Console</h2>
+                        <button id="clear-console" class="text-sm text-gray-500 hover:text-gray-700">Clear</button>
+                    </div>
+                    
+                    <div id="console" class="bg-gray-900 text-green-400 font-mono p-4 rounded h-64 overflow-y-auto text-sm">
+                        > Neural MR Bot Admin Console
+                        > Type 'help' for available commands
+                    </div>
+                    
+                    <div class="mt-2 flex">
+                        <input 
+                            id="console-input" 
+                            type="text" 
+                            class="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder="Enter command..."
+                        >
+                        <button 
+                            id="console-send" 
+                            class="bg-primary hover:bg-secondary text-white rounded-r-lg px-6 transition-colors"
+                        >
+                            Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-sm mt-8">
+            <p>Neural MR Bot Language Teacher Admin &copy; 2025</p>
+            <p class="mt-1">Model management and training interface</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/neural-data-manager.js"></script>
+    <script src="js/neural-language-model.js"></script>
+    <script src="js/neural-conversation-engine.js"></script>
+    <script src="js/test.js"></script>
+    
+    <script>
+        // Admin page functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize components
+            const dataManager = new NeuralDataManager();
+            const languageModel = new NeuralLanguageModel();
+            const conversationEngine = new NeuralConversationEngine();
+            
+            // Console functionality
+            const consoleElement = document.getElementById('console');
+            const consoleInput = document.getElementById('console-input');
+            const consoleSend = document.getElementById('console-send');
+            const clearConsole = document.getElementById('clear-console');
+            
+            // Console log function
+            function consoleLog(message, type = 'info') {
+                const line = document.createElement('div');
+                
+                switch (type) {
+                    case 'error':
+                        line.className = 'text-red-400';
+                        message = '> Error: ' + message;
+                        break;
+                    case 'success':
+                        line.className = 'text-green-400';
+                        message = '> Success: ' + message;
+                        break;
+                    case 'command':
+                        line.className = 'text-yellow-400';
+                        message = '> $ ' + message;
+                        break;
+                    default:
+                        line.className = 'text-green-400';
+                        message = '> ' + message;
+                }
+                
+                line.textContent = message;
+                consoleElement.appendChild(line);
+                consoleElement.scrollTop = consoleElement.scrollHeight;
+            }
+            
+            // Clear console
+            clearConsole.addEventListener('click', () => {
+                consoleElement.innerHTML = '';
+                consoleLog('Console cleared');
+                consoleLog("Type 'help' for available commands");
+            });
+            
+            // Console commands
+            const commands = {
+                help: () => {
+                    consoleLog('Available commands:');
+                    consoleLog('help - Show this help');
+                    consoleLog('status - Show model status');
+                    consoleLog('train <epochs> - Train model with specified epochs');
+                    consoleLog('test - Run model tests');
+                    consoleLog('reset - Reset model and data');
+                    consoleLog('export - Export model');
+                    consoleLog('clear - Clear console');
+                },
+                
+                status: async () => {
+                    const metrics = languageModel.trainingMetrics;
+                    consoleLog('Model Status:');
+                    consoleLog(`Training sessions: ${metrics.totalTrainingSessions}`);
+                    consoleLog(`Examples learned: ${metrics.totalExamples}`);
+                    consoleLog(`Last training: ${metrics.lastTrainingTime || 'Never'}`);
+                    consoleLog(`Accuracy: ${(metrics.accuracy * 100).toFixed(2)}%`);
+                    consoleLog(`Loss: ${metrics.loss.toFixed(4)}`);
+                },
+                
+                train: async (args) => {
+                    const epochs = parseInt(args[0]) || 5;
+                    consoleLog(`Training model with ${epochs} epochs...`);
+                    
+                    try {
+                        const pairs = await dataManager.getConversationPairs();
+                        
+                        if (pairs.length === 0) {
+                            consoleLog('No training data available', 'error');
+                            return;
+                        }
+                        
+                        consoleLog(`Training on ${pairs.length} conversation pairs...`);
+                        const result = await languageModel.trainModel(pairs, { epochs });
+                        
+                        if (result) {
+                            consoleLog('Training completed successfully', 'success');
+                            commands.status();
+                        } else {
+                            consoleLog('Training failed', 'error');
+                        }
+                    } catch (error) {
+                        consoleLog(`Training error: ${error.message}`, 'error');
+                    }
+                },
+                
+                test: async () => {
+                    consoleLog('Running tests...');
+                    window.runNeuralTests = true;
+                    
+                    try {
+                        const result = await runTests();
+                        if (result) {
+                            consoleLog('Tests passed successfully', 'success');
+                        } else {
+                            consoleLog('Tests failed', 'error');
+                        }
+                    } catch (error) {
+                        consoleLog(`Test error: ${error.message}`, 'error');
+                    } finally {
+                        window.runNeuralTests = false;
+                    }
+                },
+                
+                reset: async () => {
+                    if (confirm('Are you sure you want to reset the model and all data?')) {
+                        consoleLog('Resetting model and data...');
+                        
+                        try {
+                            await dataManager.clearAllData();
+                            consoleLog('Model and data reset successfully', 'success');
+                            updateUI();
+                        } catch (error) {
+                            consoleLog(`Reset error: ${error.message}`, 'error');
+                        }
+                    }
+                },
+                
+                export: async () => {
+                    consoleLog('Exporting model...');
+                    
+                    try {
+                        const exportData = await languageModel.exportModel('json');
+                        
+                        if (exportData) {
+                            const dataStr = JSON.stringify(exportData);
+                            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                            
+                            const exportFileDefaultName = 'mr-bot-model.json';
+                            
+                            const linkElement = document.createElement('a');
+                            linkElement.setAttribute('href', dataUri);
+                            linkElement.setAttribute('download', exportFileDefaultName);
+                            linkElement.click();
+                            
+                            consoleLog('Model exported successfully', 'success');
+                        } else {
+                            consoleLog('Export failed', 'error');
+                        }
+                    } catch (error) {
+                        consoleLog(`Export error: ${error.message}`, 'error');
+                    }
+                },
+                
+                clear: () => {
+                    clearConsole.click();
+                }
+            };
+            
+            // Process console command
+            function processCommand(commandText) {
+                consoleLog(commandText, 'command');
+                
+                const parts = commandText.trim().split(' ');
+                const command = parts[0].toLowerCase();
+                const args = parts.slice(1);
+                
+                if (commands[command]) {
+                    commands[command](args);
+                } else {
+                    consoleLog(`Unknown command: ${command}`, 'error');
+                    consoleLog("Type 'help' for available commands");
+                }
+            }
+            
+            // Console input handling
+            consoleSend.addEventListener('click', () => {
+                const command = consoleInput.value.trim();
+                if (command) {
+                    processCommand(command);
+                    consoleInput.value = '';
+                }
+            });
+            
+            consoleInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    const command = consoleInput.value.trim();
+                    if (command) {
+                        processCommand(command);
+                        consoleInput.value = '';
+                    }
+                }
+            });
+            
+            // Update UI with current data
+            async function updateUI() {
+                try {
+                    // Initialize components if needed
+                    if (!dataManager.initialized) {
+                        await dataManager.initialize();
+                    }
+                    
+                    if (!languageModel.initialized) {
+                        await languageModel.initialize(dataManager);
+                    }
+                    
+                    if (!conversationEngine.initialized) {
+                        await conversationEngine.initialize(languageModel, dataManager);
+                    }
+                    
+                    // Update model status
+                    const modelStatus = document.getElementById('model-status');
+                    modelStatus.innerHTML = `
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><strong>Status:</strong></div>
+                            <div>${languageModel.initialized ? 'Initialized' : 'Not initialized'}</div>
+                            
+                            <div><strong>Tokenizer:</strong></div>
+                            <div>${languageModel.tokenizer ? `${languageModel.tokenizer.vocabSize} words` : 'Not initialized'}</div>
+                            
+                            <div><strong>Model:</strong></div>
+                            <div>${languageModel.model ? 'Loaded' : 'Not loaded'}</div>
+                        </div>
+                    `;
+                    
+                    // Update training metrics
+                    const trainingMetrics = document.getElementById('training-metrics');
+                    const metrics = languageModel.trainingMetrics;
+                    
+                    trainingMetrics.innerHTML = `
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><strong>Training sessions:</strong></div>
+                            <div>${metrics.totalTrainingSessions}</div>
+                            
+                            <div><strong>Examples learned:</strong></div>
+                            <div>${metrics.totalExamples}</div>
+                            
+                            <div><strong>Last training:</strong></div>
+                            <div>${metrics.lastTrainingTime || 'Never'}</div>
+                            
+                            <div><strong>Accuracy:</strong></div>
+                            <div>${(metrics.accuracy * 100).toFixed(2)}%</div>
+                            
+                            <div><strong>Loss:</strong></div>
+                            <div>${metrics.loss.toFixed(4)}</div>
+                        </div>
+                    `;
+                    
+                    // Get training data
+                    const trainingData = await dataManager.getTrainingData();
+                    const conversationPairs = await dataManager.getConversationPairs();
+                    
+                    // Update conversation data
+                    const conversationData = document.getElementById('conversation-data');
+                    const conversationCount = document.getElementById('conversation-count');
+                    
+                    if (dataManager.trainingData.conversations.length > 0) {
+                        let html = '';
+                        
+                        dataManager.trainingData.conversations.forEach((conv, index) => {
+                            html += `
+                                <div class="mb-2 pb-2 border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : ''}">
+                                    <div><strong>Input:</strong> ${conv.input}</div>
+                                    <div><strong>Response:</strong> ${conv.response}</div>
+                                    <div class="text-xs text-gray-500">${new Date(conv.timestamp).toLocaleString()}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        conversationData.innerHTML = html;
+                        conversationCount.textContent = `${dataManager.trainingData.conversations.length} pairs`;
+                    } else {
+                        conversationData.innerHTML = '<div class="text-gray-500">No conversation data available</div>';
+                        conversationCount.textContent = '0 pairs';
+                    }
+                    
+                    // Update text data
+                    const textData = document.getElementById('text-data');
+                    const textCount = document.getElementById('text-count');
+                    
+                    let textTotal = 0;
+                    let textHtml = '';
+                    
+                    for (const lang in dataManager.trainingData.texts) {
+                        const texts = dataManager.trainingData.texts[lang];
+                        textTotal += texts.length;
+                        
+                        texts.forEach((text, index) => {
+                            textHtml += `
+                                <div class="mb-2 pb-2 border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : ''}">
+                                    <div><strong>Language:</strong> ${lang}</div>
+                                    <div><strong>Text:</strong> ${text.content.length > 100 ? text.content.substring(0, 100) + '...' : text.content}</div>
+                                    <div class="text-xs text-gray-500">${new Date(text.timestamp).toLocaleString()}</div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    if (textTotal > 0) {
+                        textData.innerHTML = textHtml;
+                        textCount.textContent = `${textTotal} texts`;
+                    } else {
+                        textData.innerHTML = '<div class="text-gray-500">No text data available</div>';
+                        textCount.textContent = '0 texts';
+                    }
+                    
+                    // Update feedback data
+                    const feedbackData = document.getElementById('feedback-data');
+                    const feedbackCount = document.getElementById('feedback-count');
+                    
+                    if (dataManager.trainingData.feedback.length > 0) {
+                        let html = '';
+                        
+                        dataManager.trainingData.feedback.forEach((feedback, index) => {
+                            html += `
+                                <div class="mb-2 pb-2 border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : ''}">
+                                    <div><strong>Input:</strong> ${feedback.input}</div>
+                                    <div><strong>Bot Response:</strong> ${feedback.botResponse}</div>
+                                    <div><strong>Correction:</strong> ${feedback.correctResponse}</div>
+                                    <div class="text-xs text-gray-500">${new Date(feedback.timestamp).toLocaleString()}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        feedbackData.innerHTML = html;
+                        feedbackCount.textContent = `${dataManager.trainingData.feedback.length} items`;
+                    } else {
+                        feedbackData.innerHTML = '<div class="text-gray-500">No feedback data available</div>';
+                        feedbackCount.textContent = '0 items';
+                    }
+                    
+                } catch (error) {
+                    console.error("Error updating UI:", error);
+                    consoleLog(`Error updating UI: ${error.message}`, 'error');
+                }
+            }
+            
+            // Button event handlers
+            document.getElementById('export-model').addEventListener('click', async () => {
+                try {
+                    const exportData = await languageModel.exportModel('json');
+                    
+                    if (exportData) {
+                        const dataStr = JSON.stringify(exportData);
+                        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                        
+                        const exportFileDefaultName = 'mr-bot-model.json';
+                        
+                        const linkElement = document.createElement('a');
+                        linkElement.setAttribute('href', dataUri);
+                        linkElement.setAttribute('download', exportFileDefaultName);
+                        linkElement.click();
+                        
+                        consoleLog('Model exported successfully', 'success');
+                    } else {
+                        consoleLog('Export failed', 'error');
+                    }
+                } catch (error) {
+                    consoleLog(`Export error: ${error.message}`, 'error');
+                }
+            });
+            
+            // Import model button and file input
+            const importButton = document.getElementById('import-model');
+            const importFileInput = document.getElementById('import-model-file');
+            
+            importButton.addEventListener('click', () => {
+                importFileInput.click();
+            });
+            
+            importFileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                consoleLog(`Importing model from ${file.name}...`);
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const importData = JSON.parse(e.target.result);
+                        const result = await languageModel.importModel(importData);
+                        
+                        if (result) {
+                            consoleLog('Model imported successfully', 'success');
+                            updateUI();
+                        } else {
+                            consoleLog('Import failed', 'error');
+                        }
+                    } catch (error) {
+                        consoleLog(`Import error: ${error.message}`, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            });
+            
+            // Reset model button
+            document.getElementById('reset-model').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to reset the model and all data?')) {
+                    consoleLog('Resetting model and data...');
+                    
+                    try {
+                        await dataManager.clearAllData();
+                        consoleLog('Model and data reset successfully', 'success');
+                        updateUI();
+                    } catch (error) {
+                        consoleLog(`Reset error: ${error.message}`, 'error');
+                    }
+                }
+            });
+            
+            // Run tests button
+            document.getElementById('run-tests').addEventListener('click', async () => {
+                consoleLog('Running tests...');
+                window.runNeuralTests = true;
+                
+                try {
+                    const result = await runTests();
+                    if (result) {
+                        consoleLog('Tests passed successfully', 'success');
+                    } else {
+                        consoleLog('Tests failed', 'error');
+                    }
+                } catch (error) {
+                    consoleLog(`Test error: ${error.message}`, 'error');
+                } finally {
+                    window.runNeuralTests = false;
+                }
+            });
+            
+            // Add training pair button
+            document.getElementById('add-training-pair').addEventListener('click', async () => {
+                const input = document.getElementById('train-input').value.trim();
+                const response = document.getElementById('train-response').value.trim();
+                
+                if (!input || !response) {
+                    consoleLog('Input and response are required', 'error');
+                    return;
+                }
+                
+                consoleLog(`Adding training pair: "${input}" → "${response}"`);
+                
+                try {
+                    await dataManager.addConversation(input, response);
+                    consoleLog('Training pair added successfully', 'success');
+                    
+                    // Clear inputs
+                    document.getElementById('train-input').value = '';
+                    document.getElementById('train-response').value = '';
+                    
+                    // Update UI
+                    updateUI();
+                } catch (error) {
+                    consoleLog(`Error adding training pair: ${error.message}`, 'error');
+                }
+            });
+            
+            // Initialize UI
+            updateUI();
+            consoleLog('Admin interface initialized');
+            consoleLog("Type 'help' in the console for available commands");
+        });
+    </script>
+</body>
+</html>
