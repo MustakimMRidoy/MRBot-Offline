@@ -1,0 +1,33 @@
+/* Bengali Font Support */
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  font-style: normal;
+  font-weight: 400;
+  src: url('NotoSansBengali-Regular.woff2') format('woff2'),
+       url('NotoSansBengali-Regular.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  font-style: normal;
+  font-weight: 700;
+  src: url('NotoSansBengali-Bold.woff2') format('woff2'),
+       url('NotoSansBengali-Bold.woff') format('woff');
+  font-display: swap;
+}
+
+/* Apply Bengali font to Bengali text */
+[lang="bn"] {
+  font-family: 'Noto Sans Bengali', sans-serif;
+}
+
+/* Bengali text styling */
+.bn-text {
+  font-family: 'Noto Sans Bengali', sans-serif;
+}
+
+/* Note: The actual font files (NotoSansBengali-Regular.woff2, NotoSansBengali-Regular.woff, 
+   NotoSansBengali-Bold.woff2, NotoSansBengali-Bold.woff) should be downloaded and 
+   placed in the fonts directory for offline support. */
