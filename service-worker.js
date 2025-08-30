@@ -5,17 +5,17 @@
 
 const CACHE_NAME = 'neural-mr-bot-cache-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/output.css',
-  '/css/styles.css',
-  '/fonts/bangla-fonts.css',
-  '/js/lib/tf.min.js',
-  '/js/neural-data-manager-enhanced.js',
-  '/js/neural-language-model-transformer.js',
-  '/js/neural-conversation-engine.js',
-  '/js/app-integrator-enhanced.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/output.css',
+  './css/styles.css',
+  './fonts/bangla-fonts.css',
+  './js/lib/tf.min.js',
+  './js/neural-data-manager-enhanced.js',
+  './js/neural-language-model-transformer.js',
+  './js/neural-conversation-engine.js',
+  './js/app-integrator-enhanced.js',
+  './manifest.json'
 ];
 
 // Install event - cache all initial resources
