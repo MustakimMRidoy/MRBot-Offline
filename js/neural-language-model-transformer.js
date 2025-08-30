@@ -1,4 +1,5 @@
-﻿class CustomMultiHeadAttention extends tf.layers.Layer {
+console.log("neural-language-model-transformer.js version: 4.0 - FINAL FIX");
+class CustomMultiHeadAttention extends tf.layers.Layer {
     constructor(config) {
         super(config);
         this.numHeads = config.numHeads;
