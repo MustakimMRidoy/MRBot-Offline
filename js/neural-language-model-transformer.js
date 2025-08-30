@@ -4,25 +4,24 @@ class CustomMultiHeadAttention extends tf.layers.Layer {
         super(config);
         this.numHeads = config.numHeads;
         this.keyDim = config.key_dim; // embeddingDim / numHeads
-    }
-
-    build(inputShape) {
-        const lastDim = inputShape[inputShape.length - 1];
-
-        // Query, Key, Value projection layers
+        
+        // Layer গুলোকে constructor-এর ভেতরেই ইনিশিয়ালাইজ করুন
         this.wqDense = tf.layers.dense({ units: this.numHeads * this.keyDim, useBias: false, name: 'wq' });
         this.wkDense = tf.layers.dense({ units: this.numHeads * this.keyDim, useBias: false, name: 'wk' });
         this.wvDense = tf.layers.dense({ units: this.numHeads * this.keyDim, useBias: false, name: 'wv' });
+        // woDense লেয়ারের units পরে build() ফাংশনে সেট হবে
+        this.woDense = null;
+    }
 
-        // Output projection layer
-        this.woDense = tf.layers.dense({ units: lastDim, name: 'wo' });
+    build(inputShape) {
+        const lastDim = Array.isArray(inputShape[0]) ? inputShape[0][inputShape[0].length - 1] : inputShape[inputShape.length - 1];
 
-        // Build the layers to create the weights
-        this.wqDense.build([null, lastDim]);
-        this.wkDense.build([null, lastDim]);
-        this.wvDense.build([null, lastDim]);
-        this.woDense.build([null, this.numHeads * this.keyDim]);
-
+        // এখন woDense লেয়ারটি build() ফাংশনের ভেতরে তৈরি করুন, কারণ এখন lastDim জানা আছে।
+        if (this.woDense == null) {
+            this.woDense = tf.layers.dense({ units: lastDim, name: 'wo' });
+        }
+        
+        super.build(inputShape);
         this.built = true;
     }
 
@@ -30,16 +29,20 @@ class CustomMultiHeadAttention extends tf.layers.Layer {
         return tf.tidy(() => {
             let query, value, key;
             if (Array.isArray(inputs)) {
-                query = inputs[0]; value = inputs[1]; key = inputs.length > 2 ? inputs[2] : value;
+                query = inputs[0]; value = inputs[1]; key = inputs[0]; // Self-attention e query, key, value eki hoy
+                if (inputs.length > 2) { // Cross-attention-এর জন্য
+                  key = inputs[1];
+                  value = inputs[1];
+                }
             } else {
                 query = inputs; value = inputs; key = inputs;
             }
-            const useCausalMask = kwargs.useCausalMask || false;
+            const useCausalMask = kwargs ? kwargs.useCausalMask || false : false;
 
             const q = this.wqDense.apply(query);
             const k = this.wkDense.apply(key);
             const v = this.wvDense.apply(value);
-
+            
             const splitQuery = this.splitHeads(q, query.shape[0]);
             const splitKey = this.splitHeads(k, key.shape[0]);
             const splitValue = this.splitHeads(v, value.shape[0]);
@@ -48,19 +51,21 @@ class CustomMultiHeadAttention extends tf.layers.Layer {
                 splitQuery, splitKey, splitValue, useCausalMask);
 
             const combinedAttention = this.combineHeads(scaledAttention);
-
+            
             const output = this.woDense.apply(combinedAttention);
-
+            
             return output;
         });
     }
+
+    // scaledDotProductAttention, splitHeads, combineHeads, computeOutputShape আগের মতোই থাকবে
 
     scaledDotProductAttention(q, k, v, useCausalMask) {
         return tf.tidy(() => {
             const matmulQk = tf.matMul(q, k, false, true);
             const dk = tf.scalar(this.keyDim, 'float32');
             const scaledAttentionLogits = tf.div(matmulQk, tf.sqrt(dk));
-
+            
             let attentionWeights;
             if (useCausalMask) {
                 const mask = tf.linalg.bandPart(tf.ones(scaledAttentionLogits.shape), -1, 0);
@@ -85,10 +90,11 @@ class CustomMultiHeadAttention extends tf.layers.Layer {
         const transposed = tf.transpose(x, [0, 2, 1, 3]);
         return tf.reshape(transposed, [transposed.shape[0], -1, this.numHeads * this.keyDim]);
     }
-
+    
     computeOutputShape(inputShape) {
-        return inputShape;
+       return Array.isArray(inputShape[0]) ? inputShape[0] : inputShape;
     }
+
 
     static get className() {
         return 'CustomMultiHeadAttention';
