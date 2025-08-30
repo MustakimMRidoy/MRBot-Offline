@@ -380,103 +380,103 @@ class NeuralLanguageModel {
      * Create a new transformer-based model using TensorFlow.js
      */
     async createModel() {
-        console.log("Creating new transformer model...");
-        if (typeof tf === 'undefined') {
-            console.error("TensorFlow.js is not loaded.");
-            return false;
-        }
+    console.log("Creating new transformer model...");
+    if (typeof tf === 'undefined') {
+        console.error("TensorFlow.js is not loaded.");
+        return false;
+    }
+    
+    const { 
+        vocabularySize, 
+        embeddingDim, 
+        numHeads,
+        numLayers,
+        ffDim,
+        dropoutRate,
+        maxSequenceLength
+    } = this.parameters;
+    
+    // Encoder
+    const encoderInputs = tf.layers.input({ shape: [null], name: 'encoder_inputs' });
+    let encoderEmbedding = tf.layers.embedding({
+        inputDim: vocabularySize,
+        outputDim: embeddingDim,
+        name: 'encoder_embedding'
+    }).apply(encoderInputs);
 
-        const {
-            vocabularySize,
+    // Positional Encoding যোগ করার সঠিক পদ্ধতি
+    const encoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
+    let encoderOutputs = tf.layers.add().apply([encoderEmbedding, tf.tensor(encoderPositionalEncoding)]);
+    
+    // Encoder transformer blocks
+    for (let i = 0; i < numLayers; i++) {
+        encoderOutputs = this.transformerBlock(
+            encoderOutputs,
             embeddingDim,
             numHeads,
-            numLayers,
             ffDim,
             dropoutRate,
-            maxSequenceLength
-        } = this.parameters;
-
-        // Encoder
-        const encoderInputs = tf.input({ shape: [null], name: 'encoder_inputs' });
-        let encoderOutputs = tf.layers.embedding({
-            inputDim: vocabularySize,
-            outputDim: embeddingDim,
-            name: 'encoder_embedding'
-        }).apply(encoderInputs);
-
-        // Positional Encoding যোগ করার সঠিক পদ্ধতি
-        const encoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
-        encoderOutputs = tf.add(encoderOutputs, tf.tensor(encoderPositionalEncoding));
-
-        // Encoder transformer blocks
-        for (let i = 0; i < numLayers; i++) {
-            encoderOutputs = this.transformerBlock(
-                encoderOutputs,
-                embeddingDim,
-                numHeads,
-                ffDim,
-                dropoutRate,
-                `encoder_${i}`
-            );
-        }
-
-        // Decoder
-        const decoderInputs = tf.input({ shape: [null], name: 'decoder_inputs' });
-        let decoderOutputs = tf.layers.embedding({
-            inputDim: vocabularySize,
-            outputDim: embeddingDim,
-            name: 'decoder_embedding'
-        }).apply(decoderInputs);
-
-        // Positional Encoding যোগ করার সঠিক পদ্ধতি
-        const decoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
-        decoderOutputs = tf.add(decoderOutputs, tf.tensor(decoderPositionalEncoding));
-
-        // Decoder transformer blocks
-        for (let i = 0; i < numLayers; i++) {
-            decoderOutputs = this.transformerBlock(
-                decoderOutputs,
-                embeddingDim,
-                numHeads,
-                ffDim,
-                dropoutRate,
-                `decoder_self_${i}`,
-                true  // Masking ব্যবহার করা হচ্ছে
-            );
-            decoderOutputs = this.crossAttentionBlock(
-                decoderOutputs,
-                encoderOutputs,
-                embeddingDim,
-                numHeads,
-                ffDim,
-                dropoutRate,
-                `decoder_cross_${i}`
-            );
-        }
-
-        const decoderOutputsFinal = tf.layers.dense({
-            units: vocabularySize,
-            activation: 'softmax',
-            name: 'decoder_dense'
-        }).apply(decoderOutputs);
-
-        this.model = tf.model({
-            inputs: [encoderInputs, decoderInputs],
-            outputs: decoderOutputsFinal,
-            name: 'transformer_model'
-        });
-
-        this.model.compile({
-            optimizer: tf.train.adam(this.parameters.learningRate),
-            loss: 'categoricalCrossentropy',
-            metrics: ['accuracy']
-        });
-
-        console.log("Transformer model created successfully");
-        this.model.summary();
-
-        return true;
+            `encoder_${i}`
+        );
     }
+    
+    // Decoder
+    const decoderInputs = tf.layers.input({ shape: [null], name: 'decoder_inputs' });
+    let decoderEmbedding = tf.layers.embedding({
+        inputDim: vocabularySize,
+        outputDim: embeddingDim,
+        name: 'decoder_embedding'
+    }).apply(decoderInputs);
+
+    // Positional Encoding যোগ করার সঠিক পদ্ধতি
+    const decoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
+    let decoderOutputs = tf.layers.add().apply([decoderEmbedding, tf.tensor(decoderPositionalEncoding)]);
+    
+    // Decoder transformer blocks
+    for (let i = 0; i < numLayers; i++) {
+        decoderOutputs = this.transformerBlock(
+            decoderOutputs,
+            embeddingDim,
+            numHeads,
+            ffDim,
+            dropoutRate,
+            `decoder_self_${i}`,
+            true  // Masking ব্যবহার করা হচ্ছে
+        );
+        decoderOutputs = this.crossAttentionBlock(
+            decoderOutputs,
+            encoderOutputs,
+            embeddingDim,
+            numHeads,
+            ffDim,
+            dropoutRate,
+            `decoder_cross_${i}`
+        );
+    }
+    
+    const decoderOutputsFinal = tf.layers.dense({
+        units: vocabularySize,
+        activation: 'softmax',
+        name: 'decoder_dense'
+    }).apply(decoderOutputs);
+    
+    this.model = tf.model({
+        inputs: [encoderInputs, decoderInputs],
+        outputs: decoderOutputsFinal,
+        name: 'transformer_model'
+    });
+    
+    this.model.compile({
+        optimizer: tf.train.adam(this.parameters.learningRate),
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy']
+    });
+    
+    console.log("Transformer model created successfully");
+    this.model.summary();
+    
+    return true;
+}
     
     /**
      * Create a transformer block
