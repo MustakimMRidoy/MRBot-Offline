@@ -492,90 +492,47 @@ class NeuralLanguageModel {
      * @returns {tf.Tensor} - Output tensor
      */
     transformerBlock(inputs, embeddingDim, numHeads, ffDim, dropoutRate, name, useMasking = false) {
-        // Multi-head attention
-        const attention = new CustomMultiHeadAttention({
-    numHeads: numHeads,
-    key_dim: embeddingDim / numHeads,
-    name: `${name}_attention`
-});
-        
-        let attentionOutput;
-        if (useMasking) {
-            // For decoder self-attention, we need to use causal masking
-            // This is a simplified approach - in a full implementation, we would create a proper causal mask
-            attentionOutput = attention.apply(inputs, {
-                query: inputs,
-                key: inputs,
-                value: inputs,
-                useCausalMask: true
-            });
-        } else {
-            attentionOutput = attention.apply(inputs, {
-                query: inputs,
-                key: inputs,
-                value: inputs
-            });
-        }
-        
-        // Add & Norm (first residual connection)
-        const attentionNormalized = tf.layers.layerNormalization({
-            name: `${name}_attention_norm`
-        }).apply(tf.tidy(() => {
-            try {
-                // Safely check if inputs and attentionOutput are valid tensors
-                const safeInputs = inputs instanceof tf.Tensor ? inputs : tf.zeros(attentionOutput.shape);
-                const safeAttention = attentionOutput instanceof tf.Tensor ? attentionOutput : tf.zeros(inputs.shape);
-                
-                // Safely add the tensors
-                return tf.add(safeInputs, safeAttention);
-            } catch (e) {
-                console.error("Error in attention residual connection:", e);
-                // Return one of the inputs as fallback or zeros
-                return inputs instanceof tf.Tensor ? inputs : 
-                       attentionOutput instanceof tf.Tensor ? attentionOutput : 
-                       tf.zeros([1, 1, embeddingDim]);
-            }
-        }));
-        
-        // Feed-forward network
-        const ffn1 = tf.layers.dense({
-            units: ffDim,
-            activation: 'relu',
-            name: `${name}_ffn1`
-        }).apply(attentionNormalized);
-        
-        const ffn2 = tf.layers.dense({
-            units: embeddingDim,
-            name: `${name}_ffn2`
-        }).apply(ffn1);
-        
-        const ffnDropout = tf.layers.dropout({
-            rate: dropoutRate,
-            name: `${name}_ffn_dropout`
-        }).apply(ffn2);
-        
-        // Add & Norm (second residual connection)
-        const output = tf.layers.layerNormalization({
-            name: `${name}_ffn_norm`
-        }).apply(tf.tidy(() => {
-            try {
-                // Safely check if inputs are valid tensors
-                const safeAttention = attentionNormalized instanceof tf.Tensor ? attentionNormalized : tf.zeros(ffnDropout.shape);
-                const safeFFN = ffnDropout instanceof tf.Tensor ? ffnDropout : tf.zeros(attentionNormalized.shape);
-                
-                // Safely add the tensors
-                return tf.add(safeAttention, safeFFN);
-            } catch (e) {
-                console.error("Error in FFN residual connection:", e);
-                // Return one of the inputs as fallback or zeros
-                return attentionNormalized instanceof tf.Tensor ? attentionNormalized : 
-                       ffnDropout instanceof tf.Tensor ? ffnDropout : 
-                       tf.zeros([1, 1, embeddingDim]);
-            }
-        }));
-        
-        return output;
+    const attention = new CustomMultiHeadAttention({
+        numHeads: numHeads,
+        key_dim: embeddingDim / numHeads,
+        name: `${name}_attention`
+    });
+    
+    let attentionOutput;
+    if (useMasking) {
+        attentionOutput = attention.apply(inputs, { useCausalMask: true });
+    } else {
+        attentionOutput = attention.apply(inputs);
     }
+    
+    const addLayer1 = tf.layers.add();
+    let attentionNormalized = tf.layers.layerNormalization({
+        name: `${name}_attention_norm`
+    }).apply(addLayer1.apply([inputs, attentionOutput]));
+    
+    const ffn1 = tf.layers.dense({
+        units: ffDim,
+        activation: 'relu',
+        name: `${name}_ffn1`
+    }).apply(attentionNormalized);
+    
+    const ffn2 = tf.layers.dense({
+        units: embeddingDim,
+        name: `${name}_ffn2`
+    }).apply(ffn1);
+    
+    const ffnDropout = tf.layers.dropout({
+        rate: dropoutRate,
+        name: `${name}_ffn_dropout`
+    }).apply(ffn2);
+
+    const addLayer2 = tf.layers.add();
+    const output = tf.layers.layerNormalization({
+        name: `${name}_ffn_norm`
+    }).apply(addLayer2.apply([attentionNormalized, ffnDropout]));
+    
+    return output;
+}
     
     /**
      * Create a cross-attention block for encoder-decoder attention
@@ -589,78 +546,42 @@ class NeuralLanguageModel {
      * @returns {tf.Tensor} - Output tensor
      */
     crossAttentionBlock(decoderInputs, encoderOutputs, embeddingDim, numHeads, ffDim, dropoutRate, name) {
-        // Cross-attention
-        const crossAttention = new CustomMultiHeadAttention({
-    numHeads: numHeads,
-    key_dim: embeddingDim / numHeads,
-    name: `${name}_cross_attention`
-});
-        
-        const crossAttentionOutput = crossAttention.apply(decoderInputs, {
-            query: decoderInputs,
-            key: encoderOutputs,
-            value: encoderOutputs
-        });
-        
-        // Add & Norm (residual connection)
-        const crossAttentionNormalized = tf.layers.layerNormalization({
-            name: `${name}_cross_attention_norm`
-        }).apply(tf.tidy(() => {
-            try {
-                // Safely check if inputs are valid tensors
-                const safeInputs = decoderInputs instanceof tf.Tensor ? decoderInputs : tf.zeros(crossAttentionOutput.shape);
-                const safeAttention = crossAttentionOutput instanceof tf.Tensor ? crossAttentionOutput : tf.zeros(decoderInputs.shape);
-                
-                // Safely add the tensors
-                return tf.add(safeInputs, safeAttention);
-            } catch (e) {
-                console.error("Error in cross-attention residual connection:", e);
-                // Return one of the inputs as fallback or zeros
-                return decoderInputs instanceof tf.Tensor ? decoderInputs : 
-                       crossAttentionOutput instanceof tf.Tensor ? crossAttentionOutput : 
-                       tf.zeros([1, 1, embeddingDim]);
-            }
-        }));
-        
-        // Feed-forward network
-        const ffn1 = tf.layers.dense({
-            units: ffDim,
-            activation: 'relu',
-            name: `${name}_ffn1`
-        }).apply(crossAttentionNormalized);
-        
-        const ffn2 = tf.layers.dense({
-            units: embeddingDim,
-            name: `${name}_ffn2`
-        }).apply(ffn1);
-        
-        const ffnDropout = tf.layers.dropout({
-            rate: dropoutRate,
-            name: `${name}_ffn_dropout`
-        }).apply(ffn2);
-        
-        // Add & Norm (second residual connection)
-        const output = tf.layers.layerNormalization({
-            name: `${name}_ffn_norm`
-        }).apply(tf.tidy(() => {
-            try {
-                // Safely check if inputs are valid tensors
-                const safeAttention = crossAttentionNormalized instanceof tf.Tensor ? crossAttentionNormalized : tf.zeros(ffnDropout.shape);
-                const safeFFN = ffnDropout instanceof tf.Tensor ? ffnDropout : tf.zeros(crossAttentionNormalized.shape);
-                
-                // Safely add the tensors
-                return tf.add(safeAttention, safeFFN);
-            } catch (e) {
-                console.error("Error in cross-attention FFN residual connection:", e);
-                // Return one of the inputs as fallback or zeros
-                return crossAttentionNormalized instanceof tf.Tensor ? crossAttentionNormalized : 
-                       ffnDropout instanceof tf.Tensor ? ffnDropout : 
-                       tf.zeros([1, 1, embeddingDim]);
-            }
-        }));
-        
-        return output;
-    }
+    const crossAttention = new CustomMultiHeadAttention({
+        numHeads: numHeads,
+        key_dim: embeddingDim / numHeads,
+        name: `${name}_cross_attention`
+    });
+    
+    const crossAttentionOutput = crossAttention.apply([decoderInputs, encoderOutputs, encoderOutputs]);
+
+    const addLayer1 = tf.layers.add();
+    const crossAttentionNormalized = tf.layers.layerNormalization({
+        name: `${name}_cross_attention_norm`
+    }).apply(addLayer1.apply([decoderInputs, crossAttentionOutput]));
+    
+    const ffn1 = tf.layers.dense({
+        units: ffDim,
+        activation: 'relu',
+        name: `${name}_ffn1`
+    }).apply(crossAttentionNormalized);
+    
+    const ffn2 = tf.layers.dense({
+        units: embeddingDim,
+        name: `${name}_ffn2`
+    }).apply(ffn1);
+    
+    const ffnDropout = tf.layers.dropout({
+        rate: dropoutRate,
+        name: `${name}_ffn_dropout`
+    }).apply(ffn2);
+
+    const addLayer2 = tf.layers.add();
+    const output = tf.layers.layerNormalization({
+        name: `${name}_ffn_norm`
+    }).apply(addLayer2.apply([crossAttentionNormalized, ffnDropout]));
+    
+    return output;
+}
     
     /**
      * Generate positional encoding for transformer
