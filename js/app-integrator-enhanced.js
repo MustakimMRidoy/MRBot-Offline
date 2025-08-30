@@ -591,10 +591,11 @@ class NeuralAppIntegrator {
      */
     speakText(text) {
         if (!this.speech.synthesis) return;
-        
-        // Stop any current speech
+
+    // কথা বলা অবস্থায় থাকলে, আগেরটি থামিয়ে নতুনটির জন্য প্রস্তুত হও
+    if (this.speech.synthesis.speaking) {
         this.speech.synthesis.cancel();
-        
+    }
         // Create utterance
         const utterance = new SpeechSynthesisUtterance(text);
         
