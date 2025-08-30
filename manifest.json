@@ -2,7 +2,7 @@
   "name": "Neural MR Bot Language Teacher",
   "short_name": "MR Bot",
   "description": "A self-learning AI language teacher that works offline",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#5D5CDE",
