@@ -1,0 +1,318 @@
+/**
+ * Neural MR Bot Language Teacher - Custom Styles
+ */
+
+/* Language Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #5D5CDE;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #5D5CDE;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Loading Animation */
+.dot-typing {
+  position: relative;
+  left: -9999px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #5D5CDE;
+  color: #5D5CDE;
+  box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  animation: dot-typing 1.5s infinite linear;
+}
+
+@keyframes dot-typing {
+  0% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+  16.667% {
+    box-shadow: 9984px -10px 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+  33.333% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+  50% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px -10px 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+  66.667% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+  83.333% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px -10px 0 0 #5D5CDE;
+  }
+  100% {
+    box-shadow: 9984px 0 0 0 #5D5CDE, 9999px 0 0 0 #5D5CDE, 10014px 0 0 0 #5D5CDE;
+  }
+}
+
+/* Tool Buttons */
+.tool-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.tool-button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-2px);
+}
+
+.tool-button:active {
+  transform: translateY(0);
+}
+
+/* Chat Container */
+#chat-container {
+  scroll-behavior: smooth;
+}
+
+#chat-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#chat-container::-webkit-scrollbar-thumb {
+  background: #c5c5c5;
+  border-radius: 3px;
+}
+
+#chat-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Message Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#chat-container > div {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Feedback UI */
+#feedback-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Bengali Font Support */
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;700&display=swap');
+}
+
+[lang="bn"] {
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  header > div:last-child {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .tool-button {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  #feedback-container {
+    left: 20px;
+    right: 20px;
+  }
+}
+
+/* Dark Mode Support */
+.dark {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+.dark header,
+.dark main,
+.dark section {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+.dark .bg-white {
+  background-color: #111827;
+}
+
+.dark .text-gray-800 {
+  color: #f3f4f6;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: #d1d5db;
+}
+
+.dark #user-input {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+.dark .tool-button {
+  background-color: #374151;
+  color: #f3f4f6;
+}
+
+.dark .tool-button:hover {
+  background-color: #4b5563;
+}
+
+/* Highlight for Learning Words */
+.learning-word {
+  position: relative;
+  cursor: pointer;
+  border-bottom: 1px dashed #5D5CDE;
+}
+
+.learning-word:hover {
+  background-color: rgba(93, 92, 222, 0.1);
+}
+
+.learning-word-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #374151;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.learning-word:hover .learning-word-tooltip {
+  opacity: 1;
+}
+
+/* Progress Indicators */
+.progress-container {
+  height: 4px;
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 2px;
+  margin: 0.5rem 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #5D5CDE;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Animations for Feedback */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse-animation {
+  animation: pulse 1s infinite;
+}
+
+/* Neural Network Visualization (Decorative) */
+.neural-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: -1;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(93, 92, 222, 0.8) 0.5px, transparent 1px),
+    radial-gradient(circle at 30% 65%, rgba(93, 92, 222, 0.8) 0.5px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(93, 92, 222, 0.8) 0.5px, transparent 1px),
+    radial-gradient(circle at 70% 35%, rgba(93, 92, 222, 0.8) 0.5px, transparent 1px),
+    radial-gradient(circle at 90% 80%, rgba(93, 92, 222, 0.8) 0.5px, transparent 1px);
+  background-size: 100px 100px;
+}
