@@ -1,4 +1,4 @@
-console.log("neural-language-model-transformer.js version: 4.0 - FINAL FIX");
+
 class CustomMultiHeadAttention extends tf.layers.Layer {
     constructor(config) {
         super(config);
@@ -95,6 +95,22 @@ class CustomMultiHeadAttention extends tf.layers.Layer {
     }
 }
 tf.serialization.registerClass(CustomMultiHeadAttention);
+
+class LambdaLayer extends tf.layers.Layer {
+    constructor(config) {
+        super(config);
+        this.fn = config.function;
+    }
+
+    call(inputs, kwargs) {
+        return this.fn(inputs[0]); 
+    }
+
+    static get className() {
+        return 'LambdaLayer';
+    }
+}
+tf.serialization.registerClass(LambdaLayer);
 
 class NeuralLanguageModel {
     constructor() {
@@ -397,7 +413,9 @@ class NeuralLanguageModel {
         maxSequenceLength
     } = this.parameters;
 
-    // --- এনকোডার ---
+    const posEncodingTensor = tf.tensor(this.positionalEncoding(maxSequenceLength, embeddingDim));
+
+    // Encoder
     const encoderInputs = tf.layers.input({ shape: [null], name: 'encoder_inputs' });
     const encoderEmbedding = tf.layers.embedding({
         inputDim: vocabularySize,
@@ -405,12 +423,10 @@ class NeuralLanguageModel {
         name: 'encoder_embedding'
     }).apply(encoderInputs);
 
-    // পজিশনাল এনকোডিং যোগ করার ১০০% সঠিক এবং নির্ভরযোগ্য পদ্ধতি
-    const posEncodingTensor = tf.tensor(this.positionalEncoding(maxSequenceLength, embeddingDim));
-    const AddPositionalEncodingLayer = tf.layers.Layer.create(
-      (incoming) => tf.add(incoming, posEncodingTensor)
-    );
-    let encoderOutputs = AddPositionalEncodingLayer.apply(encoderEmbedding);
+    // LambdaLayer ব্যবহার করে পজিশনাল এনকোডিং যোগ করা
+    let encoderOutputs = new LambdaLayer({
+        function: (x) => tf.add(x, posEncodingTensor)
+    }).apply(encoderEmbedding);
     
     // Encoder transformer blocks
     for (let i = 0; i < numLayers; i++) {
@@ -419,16 +435,19 @@ class NeuralLanguageModel {
         );
     }
     
-    // --- ডিকোডার ---
+    // Decoder
     const decoderInputs = tf.layers.input({ shape: [null], name: 'decoder_inputs' });
     const decoderEmbedding = tf.layers.embedding({
         inputDim: vocabularySize,
         outputDim: embeddingDim,
         name: 'decoder_embedding'
     }).apply(decoderInputs);
-
-    let decoderOutputs = AddPositionalEncodingLayer.apply(decoderEmbedding);
     
+    // LambdaLayer ব্যবহার করে পজিশনাল এনকোডিং যোগ করা
+    let decoderOutputs = new LambdaLayer({
+        function: (x) => tf.add(x, posEncodingTensor)
+    }).apply(decoderEmbedding);
+
     // Decoder transformer blocks
     for (let i = 0; i < numLayers; i++) {
         decoderOutputs = this.transformerBlock(
@@ -461,7 +480,6 @@ class NeuralLanguageModel {
     this.model.summary();
     return true;
 }
-    
     /**
      * Create a transformer block
      * @param {tf.Tensor} inputs - Input tensor
