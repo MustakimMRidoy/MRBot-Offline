@@ -385,29 +385,29 @@ class NeuralLanguageModel {
         console.error("TensorFlow.js is not loaded.");
         return false;
     }
-    
-    const { 
-        vocabularySize, 
-        embeddingDim, 
+
+    const {
+        vocabularySize,
+        embeddingDim,
         numHeads,
         numLayers,
         ffDim,
         dropoutRate,
         maxSequenceLength
     } = this.parameters;
-    
+
     // Encoder
     const encoderInputs = tf.layers.input({ shape: [null], name: 'encoder_inputs' });
-    let encoderEmbedding = tf.layers.embedding({
+    const encoderEmbedding = tf.layers.embedding({
         inputDim: vocabularySize,
         outputDim: embeddingDim,
         name: 'encoder_embedding'
     }).apply(encoderInputs);
 
     // Positional Encoding যোগ করার সঠিক পদ্ধতি
-    const encoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
-    let encoderOutputs = tf.layers.add().apply([encoderEmbedding, tf.tensor(encoderPositionalEncoding)]);
-    
+    const posEncodingTensor = tf.tensor(this.positionalEncoding(maxSequenceLength, embeddingDim));
+    let encoderOutputs = tf.layers.add().apply([encoderEmbedding, posEncodingTensor]);
+
     // Encoder transformer blocks
     for (let i = 0; i < numLayers; i++) {
         encoderOutputs = this.transformerBlock(
@@ -419,18 +419,17 @@ class NeuralLanguageModel {
             `encoder_${i}`
         );
     }
-    
+
     // Decoder
     const decoderInputs = tf.layers.input({ shape: [null], name: 'decoder_inputs' });
-    let decoderEmbedding = tf.layers.embedding({
+    const decoderEmbedding = tf.layers.embedding({
         inputDim: vocabularySize,
         outputDim: embeddingDim,
         name: 'decoder_embedding'
     }).apply(decoderInputs);
-
+    
     // Positional Encoding যোগ করার সঠিক পদ্ধতি
-    const decoderPositionalEncoding = this.positionalEncoding(maxSequenceLength, embeddingDim);
-    let decoderOutputs = tf.layers.add().apply([decoderEmbedding, tf.tensor(decoderPositionalEncoding)]);
+    let decoderOutputs = tf.layers.add().apply([decoderEmbedding, posEncodingTensor]);
     
     // Decoder transformer blocks
     for (let i = 0; i < numLayers; i++) {
@@ -441,7 +440,7 @@ class NeuralLanguageModel {
             ffDim,
             dropoutRate,
             `decoder_self_${i}`,
-            true  // Masking ব্যবহার করা হচ্ছে
+            true // Masking ব্যবহার করা হচ্ছে
         );
         decoderOutputs = this.crossAttentionBlock(
             decoderOutputs,
@@ -453,28 +452,28 @@ class NeuralLanguageModel {
             `decoder_cross_${i}`
         );
     }
-    
+
     const decoderOutputsFinal = tf.layers.dense({
         units: vocabularySize,
         activation: 'softmax',
         name: 'decoder_dense'
     }).apply(decoderOutputs);
-    
+
     this.model = tf.model({
         inputs: [encoderInputs, decoderInputs],
         outputs: decoderOutputsFinal,
         name: 'transformer_model'
     });
-    
+
     this.model.compile({
         optimizer: tf.train.adam(this.parameters.learningRate),
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy']
     });
-    
+
     console.log("Transformer model created successfully");
     this.model.summary();
-    
+
     return true;
 }
     
